@@ -8,6 +8,8 @@ if "%1"=="" (
   echo libs: arena, view, nob
   echo tools: 4coder, raddbg
   echo Info is optional, It will tell you a short description of any lib from the list
+  echo You may also do: download.bat [alllibs/alltools]
+  echo To get all libs/tools at once
   goto end
 )
 
@@ -29,6 +31,15 @@ for %%x in (%*) do (
   ) else (
     set "%%x=1"
   )
+)
+if "%alllibs%"=="1" (
+  set arena=1
+  set view=1
+  set nob=1
+)
+if "%alltools%"=="1" (
+  set coder4=1
+  set raddbg=1
 )
 if "%coder4%"=="1" set needmsvc=1
 if "%raddbg%"=="1" set needmsvc=1
