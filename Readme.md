@@ -11,7 +11,7 @@ Or, if you want to use curl:
 curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
 ```
 
-Usage:
+### Usage:
 ```console
 download.bat {info} [lib/tool]
 ```
