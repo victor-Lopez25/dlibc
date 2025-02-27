@@ -3,7 +3,7 @@
 setlocal
 
 if "%1"=="" (
-  echo Usage: downloader.bat {info} [lib]
+  echo Usage: download.bat {info} [lib]
   echo where lib could be any of ^(you may put multiple^):
   echo arena, view, nob
   echo Info is optional, It will tell you a short description of any lib from the list
