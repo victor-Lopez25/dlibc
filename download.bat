@@ -11,19 +11,21 @@ if "%1"=="" (
 )
 
 rem Preambule
-set downloader=curl -o
-where curl > nul 2> nul
+set downloader=wget -O
+where wget > nul 2> nul
 if %errorlevel% equ 1 (
-  where wget > nul 2> nul
+  where curl > nul 2> nul
   if %errorlevel% equ 1 (
     echo could not find curl or wget in the path, please install at least one of them
     goto end
   )
-  set downloader=wget -O
+  set downloader=curl -o
 )
 
 for %%x in (%*) do set "%%x=1"
 ::set no_main=0
+if "%arena%"=="1" set shouldfinishmain=1
+if "%view%"=="1" set shouldfinishmain=1
 if "%info%"=="1" (
   if "%arena%"=="1" (
     echo Arena Allocator implementation in pure C as an stb-style single-file library.
@@ -54,21 +56,53 @@ if "%info%"=="1" (
 ) else (
   if not exist src mkdir src
   pushd src
+  echo /* date: %date% */ > main.c
   rem downloading libs
   if "%arena%"=="1" (
     echo downloading arena implementation...
     %downloader% arena.h https://raw.githubusercontent.com/tsoding/arena/refs/heads/master/arena.h
+    (
+      echo #define ARENA_IMPLEMENTATION
+      echo #include "arena.h"
+      echo.
+    ) >> main.c
   )
   if "%view%"=="1" (
     echo downloading string_view implementation...
     %downloader% sv.h https://raw.githubusercontent.com/tsoding/sv/refs/heads/master/sv.h
+    (
+      echo #define SV_IMPLEMENTATION
+      echo #include "sv.h"
+      echo.
+    ) >> main.c
   )
   if "%nob%"=="1" (
     echo downloading nob.h...
-    %downloader% nob.h https://raw.githubusercontent.com/tsoding/nob/refs/heads/master/nob.h
+    %downloader% nob.h https://raw.githubusercontent.com/tsoding/nob.h/refs/heads/main/nob.h
+    echo making nob.c file...
+    (
+      echo #define NOB_REBUILD_URSELF^(binpath, srcpath^) "gcc", "-Wall", "Wextra", "-o", binpath, srcpath
+      echo #define NOB_IMPLEMENTATION
+      echo #include "nob.h"
+      echo.
+      echo int main^(int argc, char **argv^)
+      echo {
+      echo   NOB_GO_REBUILD_URSELF^(argc, argv^);
+      echo   return 0;
+      echo }
+    ) > nob.c
+  )
+  if "%shouldfinishmain%"=="1" (
+    (
+      echo int main^(^)
+      echo {
+      echo   return 0;
+      echo }
+    ) >> main.c
   )
   popd
 )
+
 
 :end
 endlocal
