@@ -24,8 +24,14 @@ if %errorlevel% equ 1 (
 
 for %%x in (%*) do set "%%x=1"
 ::set no_main=0
-if "%arena%"=="1" set shouldfinishmain=1
-if "%view%"=="1" set shouldfinishmain=1
+if "%arena%"=="1" set makemain=1
+if "%view%"=="1" set makemain=1
+if "%nob%"=="1" set makemain=1
+if "%makemain%"=="1" (
+  if not exist src mkdir src
+  pushd src
+  echo /* date: %date% */ > main.c
+)
 if "%info%"=="1" (
   if "%arena%"=="1" (
     echo Arena Allocator implementation in pure C as an stb-style single-file library.
@@ -54,9 +60,6 @@ if "%info%"=="1" (
     echo but I do use nob.h throughout whole projects and I want to try his arena allocator.
   )
 ) else (
-  if not exist src mkdir src
-  pushd src
-  echo /* date: %date% */ > main.c
   rem downloading libs
   if "%arena%"=="1" (
     echo downloading arena implementation...
@@ -92,15 +95,15 @@ if "%info%"=="1" (
       echo }
     ) > nob.c
   )
-  if "%shouldfinishmain%"=="1" (
+  if "%makemain%"=="1" (
     (
       echo int main^(^)
       echo {
       echo   return 0;
       echo }
     ) >> main.c
+    popd
   )
-  popd
 )
 
 
