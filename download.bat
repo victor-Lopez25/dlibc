@@ -3,9 +3,10 @@
 setlocal
 
 if "%1"=="" (
-  echo Usage: download.bat {info} [lib]
-  echo where lib could be any of ^(you may put multiple^):
-  echo arena, view, nob
+  echo Usage: download.bat {info} [lib/tool]
+  echo where lib/tool could be any of ^(you may put multiple^):
+  echo libs: arena, view, nob
+  echo tools: 4coder, raddbg
   echo Info is optional, It will tell you a short description of any lib from the list
   goto end
 )
@@ -13,17 +14,33 @@ if "%1"=="" (
 rem Preambule
 set downloader=wget -O
 where wget > nul 2> nul
-if %errorlevel% equ 1 (
+if ERRORLEVEL 1 (
   where curl > nul 2> nul
-  if %errorlevel% equ 1 (
+  if ERRORLEVEL 1 (
     echo could not find curl or wget in the path, please install at least one of them
     goto end
   )
   set downloader=curl -o
 )
 
-for %%x in (%*) do set "%%x=1"
-::set no_main=0
+for %%x in (%*) do (
+  if "%%x"=="4coder" (
+    set coder4=1
+  ) else (
+    set "%%x=1"
+  )
+)
+if "%coder4%"=="1" set needmsvc=1
+if "%raddbg%"=="1" set needmsvc=1
+if "%needmsvc%"=="1" (
+  where cl > nul 2> nul
+  if ERRORLEVEL 1 (
+    echo Please setup msvc by running vcvarsall.bat before downloading 4coder, or download 4coder from here:
+    echo https://mr-4th.itch.io/4coder
+    goto end
+  )
+)
+rem set no_main=0
 if "%arena%"=="1" set makemain=1
 if "%view%"=="1" set makemain=1
 if "%nob%"=="1" set makemain=1
@@ -45,19 +62,36 @@ if "%info%"=="1" (
     echo Header only library for writing build recipes in C.
     echo https://github.com/tsoding/nob.h
   )
+  if "%coder4%"=="1" (
+    echo 4coder is a modern text editor based loosely on Emacs.
+    echo The primary goal of 4coder is to maximize the power and ease of customization.
+    echo 4coder also places high priority on performance and portability.
+  )
+  if "%raddbg%"=="1" (
+    echo raddebugger is a native, user-mode, multi-process, graphical debugger.
+  )
   if "%2"=="" (
-    echo This is a simple downloader for libraries that I like to use, they are these:
-    echo Tsoding's arena allocator in C [arena].
-    echo Tsoding's String_View implementation in C [view].
-    echo Tsoding's nob.h, a library for writing build recipes in C [nob].
+    echo This is a simple downloader for libraries and tools that I like to use, they are these:
+    echo Libraries:
+    echo  Tsoding's arena allocator in C [arena].
+    echo  Tsoding's String_View implementation in C [view].
+    echo  Tsoding's nob.h, a library for writing build recipes in C [nob].
+    echo Tools:
+    echo  Allen Webster's 4coder, a very good text editor for programming in C/C++ [4coder].
+    echo  Rad game tools' raddebugger, a native, user-mode, multi-process, graphical debugger [raddbg].
     echo.
-    echo Usage: downloader.bat {info} [lib]
-    "echo where lib could be any of (you may put multiple):"
-    echo "arena, view, nob"
+    echo Usage: download.bat {info} [lib/tool]
+    echo where lib/tool could be any of ^(you may put multiple^):
+    echo libs: arena, view, nob
+    echo tools: 4coder, raddbg
     echo Info is optional, It will tell you a short description of any lib from the list
     echo.
-    echo I mostly only use Tsoding's String_View implementation as startup for any parsing,
-    echo but I do use nob.h throughout whole projects and I want to try his arena allocator.
+    echo Tool usage:
+    echo  Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.
+    echo  4coder is a great text editor I used to use all the time, right now I use focus editor more since I don't do only C/C++ coding.
+    echo Library usage:
+    echo  I mostly only use Tsoding's String_View implementation as startup for any parsing,
+    echo  but I do use nob.h throughout whole projects and I want to try his arena allocator.
   )
 ) else (
   rem downloading libs
@@ -103,6 +137,33 @@ if "%info%"=="1" (
       echo }
     ) >> main.c
     popd
+  )
+  if "%coder4%"=="1" (
+    %downloader% 4coder.zip https://github.com/4coder-archive/4coder/archive/refs/heads/master.zip
+    %downloader% 4coder-non-source.zip https://github.com/4coder-archive/4coder-non-source/archive/refs/heads/master.zip
+    powershell -command "Expand-Archive -Force -Path 4coder.zip -DestinationPath 4coder"
+    powershell -command "Expand-Archive -Force -Path 4coder-non-source.zip -DestinationPath 4coder"
+    del 4coder.zip
+    del 4coder-non-source.zip
+    pushd 4coder
+    rename 4coder-master code
+    rename 4coder-non-source-master 4coder-non-source
+    cd code
+    rem some directories are created when building? so it doesn't work on the first time but does on the second
+    bin\build_optimized.bat
+    cd 4coder\code
+    bin\build_optimized.bat
+    popd
+    robocopy 4coder\4coder-non-source\dist_files 4coder\build /E > nul
+    robocopy 4coder\code\ship_files 4coder\build /E > nul
+  )
+  if "%raddbg%"=="1" (
+    %downloader% raddebugger.zip https://github.com/EpicGamesExt/raddebugger/archive/refs/heads/master.zip
+    powershell -command "Expand-Archive -Force -Path raddebugger.zip -DestinationPath raddebugger"
+    del raddebugger.zip
+    cd raddebugger
+    robocopy raddebugger-master . /E /MOVE > nul
+    build release
   )
 )
 
