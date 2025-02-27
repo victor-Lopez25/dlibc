@@ -1,11 +1,11 @@
-## dlibc
+# dlibc
 
 Right now, this is windows only
 
 ### dependencies
 The downloader requires wget or curl and to build the tools, msvc
 
-### Usage:
+## Usage:
 ```console
 download.bat {info} [lib/tool]
 ```
