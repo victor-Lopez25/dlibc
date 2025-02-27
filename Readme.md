@@ -2,6 +2,15 @@
 
 Right now, this is windows only
 
+You may want to only download the downloader file like so:
+```console
+wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+```
+Or, if you want to use curl:
+```console
+curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+```
+
 Usage:
 ```console
 download.bat {info} [lib/tool]
