@@ -2,14 +2,8 @@
 
 Right now, this is windows only
 
-You may want to only download the downloader file like so:
-```console
-wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
-```
-Or, if you want to use curl:
-```console
-curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
-```
+### dependencies
+The downloader requires wget or curl and to build the tools, msvc
 
 ### Usage:
 ```console
@@ -28,6 +22,15 @@ You may also do:
 download.bat [alllibs/alltools]
 ```
 To get all libs/tools at once
+
+You may want to only download the downloader file like so:
+```console
+wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+```
+Or, if you want to use curl:
+```console
+curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+```
 
 ### license
 
