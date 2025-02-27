@@ -7,9 +7,13 @@ Usage:
 download.bat {info} [lib/tool]
 ```
 where lib/tool could be any of (you may put multiple):
+
 libs: arena, view, nob
+
 tools: 4coder, raddbg
+
 Info is optional, It will tell you a short description of any lib from the list
+
 You may also do:
 ```console
 download.bat [alllibs/alltools]
