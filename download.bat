@@ -6,7 +6,7 @@ if "%1"=="" (
   echo Usage: download.bat {info} [lib/tool]
   echo where lib/tool could be any of ^(you may put multiple^):
   echo libs: arena, view, nob
-  echo tools: 4coder, raddbg
+  echo tools: 4coder, raddbg, odin
   echo Info is optional, It will tell you a short description of any lib from the list
   echo You may also do: download.bat [alllibs/alltools]
   echo To get all libs/tools at once
@@ -15,9 +15,9 @@ if "%1"=="" (
 
 rem Preambule
 set downloader=wget -O
-where wget > nul 2> nul
+where /Q wget
 if ERRORLEVEL 1 (
-  where curl > nul 2> nul
+  where /Q curl
   if ERRORLEVEL 1 (
     echo could not find curl or wget in the path, please install at least one of them
     goto end
@@ -40,21 +40,29 @@ if "%alllibs%"=="1" (
 if "%alltools%"=="1" (
   set coder4=1
   set raddbg=1
+  set odin=1
 )
+
 if "%coder4%"=="1" set needmsvc=1
 if "%raddbg%"=="1" set needmsvc=1
 if "%needmsvc%"=="1" (
-  where cl > nul 2> nul
-  if ERRORLEVEL 1 (
-    echo Please setup msvc by running vcvarsall.bat before downloading 4coder, or download 4coder from here:
-    echo https://mr-4th.itch.io/4coder
-    goto end
+  setlocal EnableDelayedExpansion
+  where /Q cl.exe || (
+    set __VSCMD_ARG_NO_LOGO=1
+    for /f "tokens=*" %%i in ('"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath') do set VS=%%i
+    if "!VS!" equ "" (
+      echo ERROR: Visual Studio installation not found
+      exit /b 1
+    )
+    call "!VS!\VC\Auxiliary\Build\vcvarsall.bat" amd64 || exit /b 1
   )
+  setlocal DisableDelayedExpansion
 )
-rem set no_main=0
+
 if "%arena%"=="1" set makemain=1
 if "%view%"=="1" set makemain=1
 if "%nob%"=="1" set makemain=1
+if "%nomain%"=="1" set makemain=0
 if "%makemain%"=="1" (
   if not exist src mkdir src
   pushd src
@@ -81,6 +89,10 @@ if "%info%"=="1" (
   if "%raddbg%"=="1" (
     echo raddebugger is a native, user-mode, multi-process, graphical debugger.
   )
+  if "%odin%"=="1" (
+    echo Odin programming language. The Data-Oriented Language for Sane Software Development.
+    echo see more at odin-lang.org
+  )
   if "%2"=="" (
     echo This is a simple downloader for libraries and tools that I like to use, they are these:
     echo Libraries:
@@ -90,16 +102,18 @@ if "%info%"=="1" (
     echo Tools:
     echo  Allen Webster's 4coder, a very good text editor for programming in C/C++ [4coder].
     echo  Rad game tools' raddebugger, a native, user-mode, multi-process, graphical debugger [raddbg].
+    echo  Ginger Bill's Odin programming language [odin]. see more at odin-lang.org
     echo.
     echo Usage: download.bat {info} [lib/tool]
     echo where lib/tool could be any of ^(you may put multiple^):
     echo libs: arena, view, nob
-    echo tools: 4coder, raddbg
+    echo tools: 4coder, raddbg, odinlang
     echo Info is optional, It will tell you a short description of any lib from the list
     echo.
     echo Tool usage:
     echo  Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.
     echo  4coder is a great text editor I used to use all the time, right now I use focus editor more since I don't do only C/C++ coding.
+    echo  Odinlang is a programming language I like to use. See more at odin-lang.org/.
     echo Library usage:
     echo  I mostly only use Tsoding's String_View implementation as startup for any parsing,
     echo  but I do use nob.h throughout whole projects and I want to try his arena allocator.
@@ -174,6 +188,14 @@ if "%info%"=="1" (
     del raddebugger.zip
     cd raddebugger
     robocopy raddebugger-master . /E /MOVE > nul
+    build release
+  )
+  if "%odin%"=="1" (
+    %downloader% odinlang.zip https://github.com/odin-lang/Odin/archive/refs/heads/master.zip
+    powershell -command "Expand-Archive -Force -Path odinlang.zip -DestinationPath odinlang"
+    del odinlang.zip
+    cd odinlang
+    robocopy odin-master . /E /MOVE > nul
     build release
   )
 )
