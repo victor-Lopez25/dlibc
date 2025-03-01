@@ -1,6 +1,6 @@
 # dlibc
 
-Right now, this is windows only
+Tools are not supported on linux yet, will get to it soon
 
 ### dependencies
 The downloader requires wget or curl and to build the tools, msvc
