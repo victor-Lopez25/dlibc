@@ -119,7 +119,7 @@ if "%info%"=="1" (
     echo  but I do use nob.h throughout whole projects and I want to try his arena allocator.
   )
 ) else (
-  rem downloading libs
+  rem downloading libs/tools
   if "%arena%"=="1" (
     echo downloading arena implementation...
     %downloader% arena.h https://raw.githubusercontent.com/tsoding/arena/refs/heads/master/arena.h
