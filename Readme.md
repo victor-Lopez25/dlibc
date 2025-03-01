@@ -24,6 +24,7 @@ download [alllibs/alltools]
 To get all libs/tools at once
 
 You may want to only download the downloader file like so:
+
 windows:
 ```console
 wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
