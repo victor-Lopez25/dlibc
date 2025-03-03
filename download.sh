@@ -68,6 +68,7 @@ elif [ -n "$info" ]; then
       echo "4coder is a modern text editor based loosely on Emacs.";
       echo "The primary goal of 4coder is to maximize the power and ease of customization.";
       echo "4coder also places high priority on performance and portability.";
+      echo "This is the community version of 4coder (4cc) since I couldn't get 4coder to compile, it's not any worse than 4coder though";
     fi
     if [ -n "$raddbg" ]; then
       echo "raddebugger is a native, user-mode, multi-process, graphical debugger.";
@@ -84,7 +85,7 @@ elif [ -n "$info" ]; then
       echo " Tsoding's String_View implementation in C [view].";
       echo " Tsoding's nob.h, a library for writing build recipes in C [nob].";
       echo "Tools:";
-      echo " Allen Webster's 4coder, a very good text editor for programming in C/C++ [4coder].";
+      echo " Allen Webster's 4coder, a very good text editor for programming in C/C++, this is the community version [4coder].";
       echo " Rad game tools' raddebugger, a native, user-mode, multi-process, graphical debugger [raddbg].";
       echo " Ginger Bill's Odin programming language [odin]. see more at odin-lang.org";
       echo "";
@@ -142,7 +143,33 @@ int main(int argc, char **argv)
   return 0;
 }
 " >> main.c
+    popd > /dev/null
   fi
 
+  # tools
+  if [ -n "$coder4" ]; then
+    echo "installing required libraries to compile 4coder...";
+    # show the command to install the required libs
+    set -x
+    sudo apt install build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev
+    set +x
+    $downloader 4cc.zip https://github.com/4coder-community/4cc/archive/refs/heads/master.zip
+    echo "unzipping 4cc.zip..."
+    unzip 4cc.zip >/dev/null
+    mv 4cc-master 4cc
+    cd 4cc/code
+    ./bin/package-linux.sh
+    echo ""
+    echo "4coder will be in current_dist_super_*" # if I understand correctly
+    cd ../..
+  fi
 
+  if [ -n "$raddbg" ]; then
+    echo "Raddebugger is windows only for now";
+  fi
+
+  if [ -n "$odin" ]; then
+    echo "To be completely honest I don't know if I should install llvm-dev";
+    echo "It definitely looks like something that would be pretty big";
+  fi
 fi
