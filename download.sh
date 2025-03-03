@@ -33,10 +33,16 @@ if ! type wget >/dev/null 2>&1; then
   fi
 fi
 
-if [ -n "$alllib" ]; then
+if [ -n "$alllibs" ]; then
   arena=1
   view=1
   nob=1
+fi
+
+if [ -n "$alltools" ]; then
+  coder4=1
+  #raddbg=1 (not on linux yet)build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev
+  odin=1
 fi
 
 if [ -n "$arena" ] || [ -n "$view" ] || [ -n "$nob" ]; then
