@@ -6,7 +6,7 @@ if "%1"=="" (
   echo Usage: download.bat {info} [lib/tool]
   echo where lib/tool could be any of ^(you may put multiple^):
   echo libs: arena, view, nob
-  echo tools: 4coder, raddbg, odin
+  echo tools: 4coder, focus, raddbg, odin
   echo Info is optional, It will tell you a short description of any lib from the list
   echo You may also do: download.bat [alllibs/alltools]
   echo To get all libs/tools at once
@@ -39,6 +39,7 @@ if "%alllibs%"=="1" (
 )
 if "%alltools%"=="1" (
   set coder4=1
+  set focus=1
   set raddbg=1
   set odin=1
 )
@@ -91,7 +92,13 @@ if "%info%"=="1" (
   )
   if "%odin%"=="1" (
     echo Odin programming language. The Data-Oriented Language for Sane Software Development.
-    echo see more at odin-lang.org
+    echo see more at: odin-lang.org
+  )
+  if "%focus%"=="1" (
+    echo A simple editor whose goal is to stand out of your way and let you do work.
+    echo It's designed for people who value simplicity, are sensitive to input latency, 
+    echo and do not require heavy language support in their editor.
+    echo see more at: https://focus-editor.dev/
   )
   if "%2"=="" (
     echo This is a simple downloader for libraries and tools that I like to use, they are these:
@@ -101,6 +108,7 @@ if "%info%"=="1" (
     echo  Tsoding's nob.h, a library for writing build recipes in C [nob].
     echo Tools:
     echo  Allen Webster's 4coder, a very good text editor for programming in C/C++ [4coder].
+    echo  focus editor, the text editor I currently spend the most time in [focus].
     echo  Rad game tools' raddebugger, a native, user-mode, multi-process, graphical debugger [raddbg].
     echo  Ginger Bill's Odin programming language [odin]. see more at odin-lang.org
     echo.
@@ -113,6 +121,7 @@ if "%info%"=="1" (
     echo Tool usage:
     echo  Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.
     echo  4coder is a great text editor I used to use all the time, right now I use focus editor more since I don't do only C/C++ coding.
+    echo  focus editor is the text editor I currently use the most, it has syntax highlighting for any language I'm going to use, from batch to java (added in latest release!).
     echo  Odinlang is a programming language I like to use. See more at odin-lang.org/.
     echo Library usage:
     echo  I mostly only use Tsoding's String_View implementation as startup for any parsing,
@@ -197,6 +206,10 @@ if "%info%"=="1" (
     cd odinlang
     robocopy odin-master . /E /MOVE > nul
     build release
+  )
+  if "%focus%"=="1" (
+    build.bat
+    getLatestRelease.exe focus-editor/focus focus.exe
   )
 )
 
