@@ -13,7 +13,7 @@ where lib/tool could be any of (you may put multiple):
 
 libs: arena, view, nob
 
-tools: 4coder, raddbg
+tools: 4coder, focus, raddbg, odin
 
 Info is optional, It will tell you a short description of any lib from the list
 
