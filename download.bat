@@ -209,7 +209,10 @@ if "%info%"=="1" (
   )
   if "%focus%"=="1" (
     build.bat
+    if not exist focus mkdir focus
+    pushd focus
     getLatestRelease.exe focus-editor/focus focus.exe
+    popd
   )
 )
 
