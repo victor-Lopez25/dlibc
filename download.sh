@@ -4,7 +4,7 @@ if [[ "$1" == "" ]]; then
   echo "Usage: download.bat {info} [lib/tool]";
   echo "where lib/tool could be any of (you may put multiple):";
   echo "libs: arena, view, nob";
-  echo "tools: 4coder, raddbg, odin";
+  echo "tools: 4coder, focus, raddbg, odin";
   echo "Info is optional, It will tell you a short description of any lib from the list";
   echo "You may also do: download.bat [alllibs/alltools]";
   echo "To get all libs/tools at once";
@@ -41,6 +41,7 @@ fi
 
 if [ -n "$alltools" ]; then
   coder4=1
+  focus=1
   #raddbg=1 (not on linux yet)build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev
   odin=1
 fi
@@ -80,6 +81,12 @@ elif [ -n "$info" ]; then
       echo "raddebugger is a native, user-mode, multi-process, graphical debugger.";
       echo "it doesn't fully support linux yet";
     fi
+    if [ -n "$focus" ]; then
+      echo "A simple editor whose goal is to stand out of your way and let you do work."
+      echo "It's designed for people who value simplicity, are sensitive to input latency, "
+      echo "and do not require heavy language support in their editor."
+      echo "see more at: https://focus-editor.dev/"
+    fi
     if [ -n "$odin" ]; then
       echo "Odin programming language. The Data-Oriented Language for Sane Software Development.";
       echo "see more at odin-lang.org";
@@ -98,12 +105,13 @@ elif [ -n "$info" ]; then
       echo "Usage: download.bat {info} [lib/tool]";
       echo "where lib/tool could be any of (you may put multiple):";
       echo "libs: arena, view, nob";
-      echo "tools: 4coder, raddbg, odinlang";
+      echo "tools: 4coder, focus, raddbg, odinlang";
       echo "Info is optional, It will tell you a short description of any lib from the list";
       echo "";
       echo "Tool usage:";
       echo " Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.";
       echo " 4coder is a great text editor I used to use all the time, right now I use focus editor more since I don't do only C/C++ coding.";
+      echo " focus editor is the text editor I currently use the most, it has syntax highlighting for any language I'm going to use, from batch to java (added in latest release!)."
       echo " Odinlang is a programming language I like to use. See more at odin-lang.org/.";
       echo "Library usage:";
       echo " I mostly only use Tsoding's String_View implementation as startup for any parsing,";
@@ -170,12 +178,16 @@ int main(int argc, char **argv)
     cd ../..
   fi
 
+  if [ -n "$focus" ]; then
+    echo "TODO using getLastRelease.exe (soon)";
+  fi
+
   if [ -n "$raddbg" ]; then
     echo "Raddebugger is windows only for now";
   fi
 
   if [ -n "$odin" ]; then
-    echo "To be completely honest I don't know if I should install llvm-dev";
-    echo "It definitely looks like something that would be pretty big";
+    # To be completely honest I don't know if I should install llvm-dev
+    echo "TODO using getLastRelease.exe (soon)";
   fi
 fi

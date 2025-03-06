@@ -78,7 +78,7 @@ int main(int argc, char **argv)
   char *endStr = releaseName;
   while(*endStr && *endStr != '"') endStr++;
   *endStr = 0; // add a null terminator here so we can use releaseName -> endStr as a cstr
-  
+
   char *latestReleasePageFile =
     nob_temp_sprintf("%s/releases/download/%s/%s", githubProject, releaseName, fileToInstall);
   nob_cmd_append(&cmd, downloader[0], downloader[1], fileToInstall, latestReleasePageFile);
