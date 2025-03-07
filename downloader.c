@@ -10,14 +10,26 @@ bool cstrStartsWith(const char *str, const char *pre)
   return (lenstr >= lenpre) && (memcmp(pre, str, lenpre) == 0);
 }
 
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64)
+# define ARCH_X64 1
+#elif defined(__aarch64__)
+# define ARCH_ARM64 1
+#endif
+
 #if _WIN32
-#define where(command) "where /Q "command
-#define unzip(in, out) "powershell -command \"Expand-Archive -Force -Path "in" -DestinationPath "out
-#define ChangeDirectory(dir) (SetCurrentDirectory(dir))
+# define where(command) "where /Q "command
+# define UnzipToDir(in, out) system("powershell -command \"Expand-Archive -Force -Path "in" -DestinationPath "out)
+# define UnzipCmd(in, out) "powershell -command \"Expand-Archive -Force -Path %s -Destination %s", in, out
+# define ChangeDirectory(dir) (SetCurrentDirectory(dir))
+// for debug
+# define PrintWorkingDirectory "cd"
 #else
-#define where(command) "type "command" >/dev/null 2>&1"
-#define unzip(in, out) "unzip "in" >/dev/null"
-#define ChangeDirectory(dir) (chdir(dir) == 0)
+# define where(command) "type "command" >/dev/null 2>&1"
+# define UnzipToDir(in, out) system("unzip "in" -d "out" >/dev/null")
+# define UnzipCmd(in, out) "unzip %s -d %s >/dev/null"
+# define ChangeDirectory(dir) (chdir(dir) == 0)
+// for debug
+# define PrintWorkingDirectory "pwd"
 #endif
 
 Nob_Cmd cmd = {0};
@@ -25,8 +37,10 @@ Nob_Cmd cmd = {0};
 char *downloader[2] = {"wget", "-O"};
 #define DOWNLOADER downloader[0], downloader[1]
 
-void DownloadGithubLatestRelease(char *githubProject, char *fileToInstall)
+bool DownloadGithubLatestRelease(char *githubProject, char *fileToInstall, bool isPrefix, char **fullFileName)
 {
+  assert(isPrefix == (fullFileName != 0));
+
   char *projectName = githubProject;
   char *githubLinkStart = "https://github.com/";
   if(cstrStartsWith(githubProject, githubLinkStart)) {
@@ -38,18 +52,18 @@ void DownloadGithubLatestRelease(char *githubProject, char *fileToInstall)
 
   char *temp_file = "project_html";
   char *githubProjectRawFile = temp_file;
-  nob_cmd_append(&cmd, downloader[0], downloader[1], githubProjectRawFile, githubProject);
+  nob_cmd_append(&cmd, DOWNLOADER, githubProjectRawFile, githubProject);
   if(!nob_cmd_run_sync_and_reset(&cmd)) {
     fprintf(stderr, "Could not find github project website\n");
     nob_cmd_free(cmd);
-    return 2;
+    return false;
   }
 
   Nob_String_Builder sb = {0};
   if(!nob_read_entire_file(githubProjectRawFile, &sb)) {
     fprintf(stderr, "Could not read '%s' file\n", githubProjectRawFile);
     nob_cmd_free(cmd);
-    return 3;
+    return false;
   }
   nob_sb_append_null(&sb);
 
@@ -59,7 +73,7 @@ void DownloadGithubLatestRelease(char *githubProject, char *fileToInstall)
     fprintf(stderr, "Could not find a release for the project\n");
     nob_sb_free(sb);
     nob_cmd_free(cmd);
-    return 4;
+    return false;
   }
   releaseName += strlen("/releases/tag/");
   assert(!strstr(releaseName, "/releases/tag/"));
@@ -68,20 +82,47 @@ void DownloadGithubLatestRelease(char *githubProject, char *fileToInstall)
   while(*endStr && *endStr != '"') endStr++;
   *endStr = 0; // add a null terminator here so we can use releaseName -> endStr as a cstr
 
+  if(isPrefix) {
+    char *latestReleasePage =
+      nob_temp_sprintf("%s/releases/expanded_assets/%s", githubProject, releaseName);
+    nob_cmd_append(&cmd, DOWNLOADER, "latestReleaseLinks", latestReleasePage);
+    if(!nob_cmd_run_sync_and_reset(&cmd)) {
+      fprintf(stderr, "Could not get latest release page from github\n");
+      nob_sb_free(sb);
+      return false;
+    }
+
+    Nob_String_Builder lrPageData = {0};
+    if(!nob_read_entire_file("latestReleaseLinks", &lrPageData)) {
+      fprintf(stderr, "Could not read latestReleaseLinks file\n");
+      nob_sb_free(sb);
+    }
+    nob_sb_append_null(&lrPageData);
+
+    char *startStr = strstr(lrPageData.items, fileToInstall);
+    assert(startStr && "Wrong prefix");
+    endStr = strstr(startStr, ".zip") + strlen(".zip");
+    *endStr = 0;
+    fileToInstall = nob_temp_strdup(startStr);
+    *fullFileName = fileToInstall;
+
+    nob_sb_free(lrPageData);
+    nob_delete_file("latestReleaseLinks");
+  }
+
   char *latestReleasePageFile =
     nob_temp_sprintf("%s/releases/download/%s/%s", githubProject, releaseName, fileToInstall);
-  nob_cmd_append(&cmd, downloader[0], downloader[1], fileToInstall, latestReleasePageFile);
+  nob_cmd_append(&cmd, DOWNLOADER, fileToInstall, latestReleasePageFile);
   if(!nob_cmd_run_sync_and_reset(&cmd)) {
     fprintf(stderr, "Could not get file from github latest release page\n");
     nob_sb_free(sb);
-    nob_cmd_free(cmd);
-    return 5;
+    return false;
   }
 
-  if(!nob_delete_file(temp_file)) {
-    fprintf(stderr, "Could not delete temporary file: %s\n", temp_file);
-    return 6;
-  }
+  nob_delete_file(temp_file);
+  nob_sb_free(sb);
+
+  return true;
 }
 
 void UnknownCommand(char *arg)
@@ -91,7 +132,7 @@ void UnknownCommand(char *arg)
 
 void ShowDetailedInfo()
 {
-  printf("This is a simple downloader for libraries and tools that I like to use, they are these:\n");
+  printf("This is a simple downloader for libraries and tools that I like to use, they are these:\n"
          " Libraries:\n"
          "  Tsoding's arena allocator in C [arena].\n"
          "  Tsoding's String_View implementation in C [view].\n"
@@ -129,17 +170,27 @@ enum {
   DOWNLOAD_count,
 };
 
+bool YesNoQuestion(char *msg)
+{
+  char c;
+  do {
+    printf("\n%s [Y/n] ", msg);
+    c = (char)getchar();
+  } while(c != 'y' && c != 'Y' && c != 'n');
+  return c != 'n';
+}
+
 int main(int argc, char **argv)
 {
-  NOB_GO_REBUILD_URSELF(argc, argv);
+  //NOB_GO_REBUILD_URSELF(argc, argv);
 
   if(argc < 2) {
     printf("Usage: %s {info} [lib/tool]\n", argv[0]);
-    printf("where lib/tool could be any of (you may put multiple):\n");
-           "libs: arena, view, nob\n");
-           "tools: 4coder, focus, raddbg, odin\n");
-           "Info is optional, It will tell you a short description of any lib from the list\n");
-           "You may also do: download.bat [alllibs/alltools]\n");
+    printf("where lib/tool could be any of (you may put multiple):\n"
+           "libs: arena, view, nob\n"
+           "tools: 4coder, focus, raddbg, odin\n"
+           "Info is optional, It will tell you a short description of any lib from the list\n"
+           "You may also do: download.bat [alllibs/alltools]\n"
            "To get all libs/tools at once\n");
     return 0;
   }
@@ -148,14 +199,13 @@ int main(int argc, char **argv)
     // couldn't find wget, try to use curl
     if(system(where("curl"))) {
       fprintf(stderr, "Could not find wget or curl, please install at least one of the two\n");
-      nob_cmd_free(cmd);
       return 1;
     }
     downloader[0] = "curl"; downloader[1] = "-o";
   }
 
   bool toDownload[DOWNLOAD_count] = {0};
-  bool showInfo = true;
+  bool showInfo = false;
   bool noMakeMain = false;
 
   for(int i = 1; i < argc; i++)
@@ -234,7 +284,7 @@ int main(int argc, char **argv)
   }
 
   bool onlyInfo = true;
-  for(int i = 0; i < ARRAY_LEN(toDownload); i++) if(toDownload[i]) onlyInfo = false;
+  for(int i = 0; i < (int)NOB_ARRAY_LEN(toDownload); i++) if(toDownload[i]) onlyInfo = false;
 
   if(onlyInfo) {
     ShowDetailedInfo();
@@ -242,7 +292,7 @@ int main(int argc, char **argv)
   }
 
   if(showInfo) {
-    if(toDownload[DOWNLAD_arena]) {
+    if(toDownload[DOWNLOAD_arena]) {
       printf("Arena Allocator implementation in pure C as an stb-style single-file library.\n"
              "https://github.com/tsoding/arena\n");
     }
@@ -274,7 +324,7 @@ int main(int argc, char **argv)
     }
   }
   else {
-    bool makeMain = (toDownload[DOWNLOAD_arena]|toDownlaod[DOWNLOAD_view]|
+    bool makeMain = (toDownload[DOWNLOAD_arena]|toDownload[DOWNLOAD_view]|
                      toDownload[DOWNLOAD_nob]) && !noMakeMain;
     Nob_String_Builder mainBuilder = {0};
     if(makeMain) {
@@ -319,52 +369,143 @@ int main(int argc, char **argv)
 
     if(makeMain) {
       nob_sb_append_cstr(&mainBuilder, "int main()\n{\n  return 0;\n}\n");
-      if(!nob_write_entire_file("src/main.c", sb.items, sb.count)) return 1;
+      if(!nob_write_entire_file("src/main.c", mainBuilder.items, mainBuilder.count)) return 1;
+      nob_sb_free(mainBuilder);
     }
 
-    assert(!"WARNING: probably very buggy, do not use, I need to test this.");
-    // This commit is to be able to test stuff on windows
+#if _WIN32
+    if(toDownload[DOWNLOAD_4coder] || toDownload[DOWNLOAD_raddbg]) {
+      printf("Make sure you have initialized msvc by calling \"vcvarsall.bat x64\"\n"
+             "This script is automatically called by the 'x64 Native Tools Command Prompt for VS <year>' variant of the vanilla cmd.exe\n"
+             "If you've installed the build tools, this command prompt may be easily located by searching for Native from the Windows Start Menu search.\n"
+             "Now is the chance to exit using Ctrl-C if you haven't called vcvarsall.bat\n");
+      if(!YesNoQuestion("Do you want to continue?")) return 0;
+    }
+#endif
 
     if(toDownload[DOWNLOAD_4coder]) {
 #ifndef _WIN32
       printf("You need a couple of libs to build 4coder, if you're not sure you have them, Ctrl-C out and try to install them\n"
              "make sure to have them installed before rerunning this program:\n"
              "build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev\n");
-             "You can also download 4coder prebuilt, from: https://mr-4th.itch.io/4coder\n");
-      char c;
-      do {
-        printf("\nDo you want to continue? [Y/n]");
-        c = getchar();
-      } while(c != 'y' && c != 'Y' && c != 'n');
-      if(c == 'n') return 0;
+             "You can also download 4coder prebuilt, from: https://mr-4th.itch.io/4coder\n\n");
+      if(!YesNoQuestion("Do you want to continue?")) return 0;
 #endif
 
       nob_cmd_append(&cmd, DOWNLOADER, "4coder.zip", "https://github.com/4coder-archive/4coder/archive/refs/heads/master.zip");
       if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
       nob_cmd_append(&cmd, DOWNLOADER, "4coder-non-source.zip", "https://github.com/4coder-archive/4coder-non-source/archive/refs/heads/master.zip");
       if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
-      system(unzip("4coder.zip", "4coder"));
-      system(unzip("4coder-non.source.zip", "4coder"));
+      UnzipToDir("4coder.zip", "4coder");
+      UnzipToDir("4coder-non-source.zip", "4coder");
       nob_delete_file("4coder.zip");
       nob_delete_file("4coder-non-source.zip");
-      ChangeDirectory("4coder"));
+      ChangeDirectory("4coder");
       nob_rename("4coder-master", "code");
       nob_rename("4coder-non-source-master", "4coder-non-source");
       ChangeDirectory("code");
 #if _WIN32
-      system("bin/build_optimized.bat");
+      system("bin\\build_optimized.bat");
       ChangeDirectory("4coder/code");
-      system("bin/build_optimized.bat");
+      system("bin\\build_optimized.bat");
+#elif linux
+      system("./bin/build-linux.sh");
 #else
-      system("bin/build-linux.sh"); // todo: only do this when linux, call mac build otherwise
+      system("./bin/build-mac.sh"); // untested, but no reason it should work?
 #endif
       ChangeDirectory("../..");
+      nob_minimal_log_level = NOB_WARNING; // a bunch of files, you probably don't want INFO here
       if(!nob_copy_directory_recursively("4coder/4coder-non-source/dist_files", "4coder/build")) return 1;
       if(!nob_copy_directory_recursively("4coder/code/ship_files", "4coder/build")) return 1;
+      nob_minimal_log_level = NOB_INFO;
     }
 
+    if(toDownload[DOWNLOAD_raddbg]) {
+#if _WIN32
+      nob_cmd_append(&cmd, DOWNLOADER, "raddebugger.zip", "https://github.com/EpicGamesExt/raddebugger/archive/refs/heads/master.zip");
+      if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
+      UnzipToDir("raddebugger.zip", "raddebugger");
+      nob_delete_file("raddebugger.zip");
+      ChangeDirectory("raddebugger");
+      nob_minimal_log_level = NOB_WARNING;
+      if(!nob_copy_directory_recursively("raddebugger-master", ".")) return 1;
+      nob_minimal_log_level = NOB_INFO;
+      system("build.bat release");
+#else
+      printf("Raddebugger is only supported on windows for now\n");
+#endif
+    }
 
+    if(toDownload[DOWNLOAD_odin]) {
+#ifndef _WIN32
+      printf("To build from source, install clang and LLVM (the versions we support are 14, 17 and 18) using your package manager\n"
+             "It could be that LLVM is split into multiple packages and you also need to install something like llvm-devel\n"
+             "Make sure llvm-config, llvm-config-(14|17|18), or llvm-config(14|17|18) and clang are able to be found through your $PATH\n"
+             "If you want to specify an explicit LLVM version or path, you can set the LLVM_CONFIG environment variable: LLVM_CONFIG=/path/to/llvm-config make release-native\n");
+#endif
+      bool buildFromSource = YesNoQuestion("Build from source?");
+      if(buildFromSource) {
+        nob_cmd_append(&cmd, DOWNLOADER, "odinlang.zip", "https://github.com/odin-lang/Odin/archive/refs/heads/master.zip");
+        if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
+        UnzipToDir("odinlang.zip", "odinlang");
+        nob_delete_file("odinlang.zip");
+        ChangeDirectory("odinlang");
+        nob_minimal_log_level = NOB_WARNING;
+        if(!nob_copy_directory_recursively("odin-master", ".")) return 1;
+        nob_minimal_log_level = NOB_INFO;
+#if _WIN32
+        system("build release");
+#elif linux
+        system("make release-native");
+        printf("If an atomic.h error occurred, see: https://odin-lang.org/docs/install/#a-note-on-atomich\n");
+#endif
+      }
+      else {
+#if _WIN32
+        char *fileToDownload = "odin-windows-amd64-dev";
+#elif linux
+        Nob_String_Builder linuxVer = {0};
+        if(!ARCH_X64 || !nob_read_entire_file("/etc/lsb-release", &linuxVer) ||
+           !nob_sv_starts_with(nob_sb_to_sv(&linuxVer, "Ubuntu"))) {
+          fprintf(stderr, "There is no prebuilt Odin zip file for this distribution of linux");
+          return 1;
+        }
+        nob_sb_free(linuxVer);
+        char *fileToDownload = "odin-ubuntu-amd64-dev";
+#elif ARCH_X64
+        char *fileToDownload = "odin-macos-amd64-dev";
+#elif ARCH_ARM64
+        char *fileToDownload = "odin-macos-arm64-dev";
+#else
+        fprintf(stderr, "unsupported platform/arch\n");
+        return 1;
+#endif
+        if(!nob_mkdir_if_not_exists("odinlang")) return 1;
+        ChangeDirectory("odinlang");
+        char *fullFileName;
+        if(!DownloadGithubLatestRelease("odin-lang/Odin", fileToDownload, true, &fullFileName)) return 1;
+        system(nob_temp_sprintf(UnzipCmd(fullFileName, ".")));
+        nob_delete_file(fullFileName);
+        ChangeDirectory("..");
+      }
+    }
+
+    if(toDownload[DOWNLOAD_focus]) {
+#if _WIN32
+      char *fileToDownload = "focus.exe";
+#elif linux
+      char *fileToDownload = "focus-linux";
+#else
+      char *fileToDownload = "focus-macOS.dmg";
+#endif
+      if(!nob_mkdir_if_not_exists("focus")) return 1;
+      ChangeDirectory("focus");
+      if(!DownloadGithubLatestRelease("focus-editor/focus", fileToDownload, false, 0)) return 1;
+      ChangeDirectory("..");
+    }
   }
+
+  nob_cmd_free(&cmd);
 
   return 0;
 }

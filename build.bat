@@ -2,7 +2,7 @@
 
 setlocal EnableDelayedExpansion
 
-set cc=gcc -o getLatestRelease.exe -Wall -Wextra -O2
+set cc=gcc -o downloader.exe -Wall -Wextra -O2
 where /Q gcc || (
   where /Q cl.exe || (
     set __VSCMD_ARG_NO_LOGO=1
@@ -12,9 +12,9 @@ where /Q gcc || (
       exit /b 1
     )
     call "!VS!\VC\Auxiliary\Build\vcvarsall.bat" amd64 || exit /b 1
-    set cc=cl -FC -GR- -EHa- -nologo -W4 -wd4996 -O2 -FegetLatestRelease.exe -D_CRT_SECURE_NO_WARNINGS
+    set cc=cl -FC -GR- -EHa- -nologo -W4 -wd4996 -O2 -Fedownloader.exe -D_CRT_SECURE_NO_WARNINGS
   )
 )
 setlocal DisableDelayedExpansion
 
-%cc% src\getLatestRelease.c
+%cc% downloader.c
