@@ -55,14 +55,12 @@ bool DownloadGithubLatestRelease(char *githubProject, char *fileToInstall, bool 
   nob_cmd_append(&cmd, DOWNLOADER, githubProjectRawFile, githubProject);
   if(!nob_cmd_run_sync_and_reset(&cmd)) {
     fprintf(stderr, "Could not find github project website\n");
-    nob_cmd_free(cmd);
     return false;
   }
 
   Nob_String_Builder sb = {0};
   if(!nob_read_entire_file(githubProjectRawFile, &sb)) {
     fprintf(stderr, "Could not read '%s' file\n", githubProjectRawFile);
-    nob_cmd_free(cmd);
     return false;
   }
   nob_sb_append_null(&sb);
@@ -72,7 +70,6 @@ bool DownloadGithubLatestRelease(char *githubProject, char *fileToInstall, bool 
   if(!releaseName) {
     fprintf(stderr, "Could not find a release for the project\n");
     nob_sb_free(sb);
-    nob_cmd_free(cmd);
     return false;
   }
   releaseName += strlen("/releases/tag/");
@@ -96,6 +93,7 @@ bool DownloadGithubLatestRelease(char *githubProject, char *fileToInstall, bool 
     if(!nob_read_entire_file("latestReleaseLinks", &lrPageData)) {
       fprintf(stderr, "Could not read latestReleaseLinks file\n");
       nob_sb_free(sb);
+      return false;
     }
     nob_sb_append_null(&lrPageData);
 
@@ -147,7 +145,7 @@ void ShowDetailedInfo()
          " where lib/tool could be any of (you may put multiple):\n"
          " libs: arena, view, nob\n"
          " tools: 4coder, raddbg, odinlang\n"
-         " Info is optional, It will tell you a short description of any lib from the list\n"
+         " Info is optional, It will tell you a short description of any lib/tool from the list\n"
          "\n"
          " Tool usage:\n"
          "  Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.\n"
@@ -331,8 +329,11 @@ int main(int argc, char **argv)
       if(!nob_mkdir_if_not_exists("src")) return 1;
       time_t rawtime;
       time(&rawtime);
+      char timebuf[26];
+      asctime_s(timebuf, 26, localtime(&rawtime));
+      timebuf[strlen(timebuf)-1] = 0; // I don't want the trailing '\n'
       nob_sb_append_cstr(&mainBuilder, "/* ");
-      nob_sb_append_cstr(&mainBuilder, asctime(localtime(&rawtime)));
+      nob_sb_append_cstr(&mainBuilder, timebuf);
       nob_sb_append_cstr(&mainBuilder, " */\n");
     }
 
@@ -411,7 +412,7 @@ int main(int argc, char **argv)
 #elif linux
       system("./bin/build-linux.sh");
 #else
-      system("./bin/build-mac.sh"); // untested, but no reason it should work?
+      system("./bin/build-mac.sh"); // untested, but no reason it shouldn't work?
 #endif
       ChangeDirectory("../..");
       nob_minimal_log_level = NOB_WARNING; // a bunch of files, you probably don't want INFO here
@@ -443,7 +444,7 @@ int main(int argc, char **argv)
              "Make sure llvm-config, llvm-config-(14|17|18), or llvm-config(14|17|18) and clang are able to be found through your $PATH\n"
              "If you want to specify an explicit LLVM version or path, you can set the LLVM_CONFIG environment variable: LLVM_CONFIG=/path/to/llvm-config make release-native\n");
 #endif
-      bool buildFromSource = YesNoQuestion("Build from source?");
+      bool buildFromSource = YesNoQuestion("Build odin from source?");
       if(buildFromSource) {
         nob_cmd_append(&cmd, DOWNLOADER, "odinlang.zip", "https://github.com/odin-lang/Odin/archive/refs/heads/master.zip");
         if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
@@ -467,7 +468,7 @@ int main(int argc, char **argv)
         Nob_String_Builder linuxVer = {0};
         if(!ARCH_X64 || !nob_read_entire_file("/etc/lsb-release", &linuxVer) ||
            !nob_sv_starts_with(nob_sb_to_sv(&linuxVer, "Ubuntu"))) {
-          fprintf(stderr, "There is no prebuilt Odin zip file for this distribution of linux");
+          fprintf(stderr, "There is no prebuilt Odin zip file for this distribution of linux\n");
           return 1;
         }
         nob_sb_free(linuxVer);
@@ -505,7 +506,7 @@ int main(int argc, char **argv)
     }
   }
 
-  nob_cmd_free(&cmd);
+  nob_cmd_free(cmd);
 
   return 0;
 }
