@@ -35,26 +35,30 @@ If you want to do it all with a series of commands and skip downloading this rep
 
 windows:
 ```console
-wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+wget -O downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+wget -O nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 build.bat
 downloder info
 ```
 Or, if you want to use curl:
 ```console
-curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+curl -o downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+curl -o nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 build.bat
 downloder info
 ```
 linux:
 ```console
-wget -O download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
+wget -O downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+wget -O nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 cc downloader.c -o downloader -O2
 chmod +x downloader
 ./downloder info
 ```
 Or, if you want to use curl:
 ```console
-curl -o download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
+curl -o downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+curl -o nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 cc downloader.c -o downloader -O2
 chmod +x downloader
 ./downloder info
