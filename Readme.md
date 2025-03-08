@@ -4,7 +4,7 @@
 - wget or curl
 - msvc on windows, gcc on linux, clang on mac (mac not tested yet)
 
-(msvc is only needed to build the tools, the downloader can be build with any cc)
+(msvc is only needed to build the tools, the downloader can be built with any cc)
 
 ## Usage:
 windows:
