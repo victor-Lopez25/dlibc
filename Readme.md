@@ -37,6 +37,7 @@ windows:
 ```console
 wget -O downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
 wget -O nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
+wget -O build.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/build.bat
 build.bat
 downloder info
 ```
@@ -44,6 +45,7 @@ Or, if you want to use curl:
 ```console
 curl -o downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
 curl -o nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
+curl -o build.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/build.bat
 build.bat
 downloder info
 ```
