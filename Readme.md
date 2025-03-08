@@ -48,7 +48,6 @@ downloder info
 linux:
 ```console
 wget -O download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
-chmod +x build.sh
 cc downloader.c -o downloader -O2
 chmod +x downloader
 ./downloder info
@@ -56,7 +55,6 @@ chmod +x downloader
 Or, if you want to use curl:
 ```console
 curl -o download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
-chmod +x build.sh
 cc downloader.c -o downloader -O2
 chmod +x downloader
 ./downloder info
