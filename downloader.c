@@ -23,13 +23,15 @@ bool cstrStartsWith(const char *str, const char *pre)
 # define ChangeDirectory(dir) (SetCurrentDirectory(dir))
 // for debug
 # define PrintWorkingDirectory "cd"
+# define asciitime(buf, bufsize, rawtime) asctime_s(buf, bufsize, localtime(&rawtime))
 #else
 # define where(command) "type "command" >/dev/null 2>&1"
 # define UnzipToDir(in, out) system("unzip "in" -d "out" >/dev/null")
-# define UnzipCmd(in, out) "unzip %s -d %s >/dev/null"
+# define UnzipCmd(in, out) "unzip %s -d %s >/dev/null", in, out
 # define ChangeDirectory(dir) (chdir(dir) == 0)
 // for debug
 # define PrintWorkingDirectory "pwd"
+# define asciitime(buf, bufsize, rawtime) asctime_r(localtime(&rawtime), buf)
 #endif
 
 Nob_Cmd cmd = {0};
@@ -98,7 +100,10 @@ bool DownloadGithubLatestRelease(char *githubProject, char *fileToInstall, bool 
     nob_sb_append_null(&lrPageData);
 
     char *startStr = strstr(lrPageData.items, fileToInstall);
-    assert(startStr && "Wrong prefix");
+    if(!startStr) {
+      nob_sb_free(sb);
+      return false;
+    }
     endStr = strstr(startStr, ".zip") + strlen(".zip");
     *endStr = 0;
     fileToInstall = nob_temp_strdup(startStr);
@@ -176,6 +181,104 @@ bool YesNoQuestion(char *msg)
     c = (char)getchar();
   } while(c != 'y' && c != 'Y' && c != 'n');
   return c != 'n';
+}
+
+// for nesting conditions
+bool append_null_ret_true(Nob_String_Builder *sb) { nob_sb_append_null(sb); return true; }
+
+// Moved out to a function due to surprisingly complex linux handling
+bool DownloadOdinlang()
+{
+#ifndef _WIN32
+  printf("To build from source, install clang and LLVM (the versions we support are 14, 17 and 18) using your package manager\n"
+         "It could be that LLVM is split into multiple packages and you also need to install something like llvm-devel\n"
+         "Make sure llvm-config, llvm-config-(14|17|18), or llvm-config(14|17|18) and clang are able to be found through your $PATH\n"
+         "If you want to specify an explicit LLVM version or path, you can set the LLVM_CONFIG environment variable: LLVM_CONFIG=/path/to/llvm-config make release-native\n");
+#endif
+  bool buildFromSource = YesNoQuestion("Build odin from source?");
+  if(buildFromSource) {
+odin_build_from_source:
+    nob_cmd_append(&cmd, DOWNLOADER, "odinlang.zip", "https://github.com/odin-lang/Odin/archive/refs/heads/master.zip");
+    if(!nob_cmd_run_sync_and_reset(&cmd)) return false;
+    UnzipToDir("odinlang.zip", "odinlang");
+    nob_delete_file("odinlang.zip");
+    ChangeDirectory("odinlang");
+    nob_minimal_log_level = NOB_WARNING;
+    if(!nob_copy_directory_recursively("odin-master", ".")) return false;
+    nob_minimal_log_level = NOB_INFO;
+#if _WIN32
+    system("build release");
+#elif linux
+    system("make release-native");
+    printf("If an atomic.h error occurred, see: https://odin-lang.org/docs/install/#a-note-on-atomich\n");
+#endif
+  }
+  else {
+    if(!nob_mkdir_if_not_exists("odinlang")) return false;
+    ChangeDirectory("odinlang");
+    char *fullFileName;
+#if linux
+    if(!ARCH_X64) {
+      fprintf(stderr, "There is no prebuilt Odin zip file for this microarch in linux\n");
+      if(YesNoQuestion("Build odin from source?")) goto odin_build_from_source;
+      return false;
+    }
+
+    char *fileToDownload = "odin-linux-amd64-dev";
+    if(!DownloadGithubLatestRelease("odin-lang/Odin", fileToDownload, true, &fullFileName)) {
+      fileToDownload = "odin-ubuntu-amd64-dev";
+      if(system("cat /proc/version | grep Ubuntu >/dev/null")) {
+        fprintf(stderr, "There is no prebuilt Odin zip file for this distribution of linux\n");
+        if(YesNoQuestion("Build odin from source?")) goto odin_build_from_source;
+        return false;
+      }
+      if(!DownloadGithubLatestRelease("odin-lang/Odin", fileToDownload, true, &fullFileName)) return false;
+      system(nob_temp_sprintf(UnzipCmd(fullFileName, ".")));
+      nob_delete_file(fullFileName);
+      system("tar -xf dist.tar.gz");
+      nob_delete_file("dist.tar.gz");
+      Nob_File_Paths filepaths = {0};
+      if(!nob_read_entire_dir(".", &filepaths)) return false;
+      int pathIdx = -1;
+      for(int i = 0; i < filepaths.count; i++)
+      {
+        if(cstrStartsWith(filepaths.items[i], "odin")) pathIdx = i;
+      }
+      if(pathIdx == -1) {
+        fprintf(stderr, "Could not find odin directory\n"); // shouldn't happen
+        return false;
+      }
+      nob_minimal_log_level = NOB_WARNING;
+      nob_copy_directory_recursively(filepaths.items[pathIdx], ".");
+      nob_minimal_log_level = NOB_INFO;
+    }
+    else {
+      system(nob_temp_sprintf(UnzipCmd(fullFileName, ".")));
+      nob_delete_file(fullFileName);
+      fullFileName[strlen(fullFileName)-strlen(".zip")] = 0;
+      nob_minimal_log_level = NOB_WARNING;
+      nob_copy_directory_recursively(fullFileName, ".");
+      nob_minimal_log_level = NOB_INFO;
+    }
+    ChangeDirectory("..");
+#else
+#if _WIN32
+    char *fileToDownload = "odin-windows-amd64-dev";
+#elif ARCH_X64
+    char *fileToDownload = "odin-macos-amd64-dev";
+#elif ARCH_ARM64
+    char *fileToDownload = "odin-macos-arm64-dev";
+#else
+    fprintf(stderr, "unsupported platform/arch\n");
+    return false;
+#endif
+    if(!DownloadGithubLatestRelease("odin-lang/Odin", fileToDownload, true, &fullFileName)) return false;
+    system(nob_temp_sprintf(UnzipCmd(fullFileName, ".")));
+    nob_delete_file(fullFileName);
+    ChangeDirectory("..");
+#endif
+  }
+  return true;
 }
 
 int main(int argc, char **argv)
@@ -330,7 +433,7 @@ int main(int argc, char **argv)
       time_t rawtime;
       time(&rawtime);
       char timebuf[26];
-      asctime_s(timebuf, 26, localtime(&rawtime));
+      asciitime(timebuf, 26, rawtime);
       timebuf[strlen(timebuf)-1] = 0; // I don't want the trailing '\n'
       nob_sb_append_cstr(&mainBuilder, "/* ");
       nob_sb_append_cstr(&mainBuilder, timebuf);
@@ -342,7 +445,7 @@ int main(int argc, char **argv)
       nob_cmd_append(&cmd, DOWNLOADER, "src/arena.h", "https://raw.githubusercontent.com/tsoding/arena/refs/heads/master/arena.h");
       if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
       nob_sb_append_cstr(&mainBuilder, "#define ARENA_IMPLEMENTATION\n"
-                         "#include \"arena.h\"\n");
+                         "#include \"arena.h\"\n\n");
     }
     if(toDownload[DOWNLOAD_nob]) {
       printf("downloading nob.h...\n");
@@ -365,7 +468,7 @@ int main(int argc, char **argv)
       nob_cmd_append(&cmd, DOWNLOADER, "src/view.h", "https://raw.githubusercontent.com/tsoding/sv/refs/heads/master/sv.h");
       if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
       nob_sb_append_cstr(&mainBuilder, "#define SV_IMPLEMENTATION\n"
-                         "#include \"sv.h\"\n");
+                         "#include \"sv.h\"\n\n");
     }
 
     if(makeMain) {
@@ -388,7 +491,7 @@ int main(int argc, char **argv)
 #ifndef _WIN32
       printf("You need a couple of libs to build 4coder, if you're not sure you have them, Ctrl-C out and try to install them\n"
              "make sure to have them installed before rerunning this program:\n"
-             "build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev\n");
+             "build-essential libx11-dev libxfixes-dev libglx-dev mesa-common-dev libasound2-dev libfreetype-dev libfontconfig-dev\n"
              "You can also download 4coder prebuilt, from: https://mr-4th.itch.io/4coder\n\n");
       if(!YesNoQuestion("Do you want to continue?")) return 0;
 #endif
@@ -438,57 +541,7 @@ int main(int argc, char **argv)
     }
 
     if(toDownload[DOWNLOAD_odin]) {
-#ifndef _WIN32
-      printf("To build from source, install clang and LLVM (the versions we support are 14, 17 and 18) using your package manager\n"
-             "It could be that LLVM is split into multiple packages and you also need to install something like llvm-devel\n"
-             "Make sure llvm-config, llvm-config-(14|17|18), or llvm-config(14|17|18) and clang are able to be found through your $PATH\n"
-             "If you want to specify an explicit LLVM version or path, you can set the LLVM_CONFIG environment variable: LLVM_CONFIG=/path/to/llvm-config make release-native\n");
-#endif
-      bool buildFromSource = YesNoQuestion("Build odin from source?");
-      if(buildFromSource) {
-        nob_cmd_append(&cmd, DOWNLOADER, "odinlang.zip", "https://github.com/odin-lang/Odin/archive/refs/heads/master.zip");
-        if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
-        UnzipToDir("odinlang.zip", "odinlang");
-        nob_delete_file("odinlang.zip");
-        ChangeDirectory("odinlang");
-        nob_minimal_log_level = NOB_WARNING;
-        if(!nob_copy_directory_recursively("odin-master", ".")) return 1;
-        nob_minimal_log_level = NOB_INFO;
-#if _WIN32
-        system("build release");
-#elif linux
-        system("make release-native");
-        printf("If an atomic.h error occurred, see: https://odin-lang.org/docs/install/#a-note-on-atomich\n");
-#endif
-      }
-      else {
-#if _WIN32
-        char *fileToDownload = "odin-windows-amd64-dev";
-#elif linux
-        Nob_String_Builder linuxVer = {0};
-        if(!ARCH_X64 || !nob_read_entire_file("/etc/lsb-release", &linuxVer) ||
-           !nob_sv_starts_with(nob_sb_to_sv(&linuxVer, "Ubuntu"))) {
-          fprintf(stderr, "There is no prebuilt Odin zip file for this distribution of linux\n");
-          return 1;
-        }
-        nob_sb_free(linuxVer);
-        char *fileToDownload = "odin-ubuntu-amd64-dev";
-#elif ARCH_X64
-        char *fileToDownload = "odin-macos-amd64-dev";
-#elif ARCH_ARM64
-        char *fileToDownload = "odin-macos-arm64-dev";
-#else
-        fprintf(stderr, "unsupported platform/arch\n");
-        return 1;
-#endif
-        if(!nob_mkdir_if_not_exists("odinlang")) return 1;
-        ChangeDirectory("odinlang");
-        char *fullFileName;
-        if(!DownloadGithubLatestRelease("odin-lang/Odin", fileToDownload, true, &fullFileName)) return 1;
-        system(nob_temp_sprintf(UnzipCmd(fullFileName, ".")));
-        nob_delete_file(fullFileName);
-        ChangeDirectory("..");
-      }
+      DownloadOdinlang();
     }
 
     if(toDownload[DOWNLOAD_focus]) {

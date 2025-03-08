@@ -1,13 +1,20 @@
 # dlibc
 
-Tools are not supported on linux yet, will get to it soon
-
 ### dependencies
-The downloader requires wget or curl and to build the tools, msvc
+- wget or curl
+- msvc on windows, gcc on linux, clang on mac (mac not tested yet)
+(msvc is only needed to build the tools, the downloader can be build with any cc)
 
 ## Usage:
+windows:
 ```console
-download {info} [lib/tool]
+build.bat
+downloader.exe {info} [lib/tool]
+```
+linux, mac:
+```console
+./build.sh
+./downloader {info} [lib/tool]
 ```
 where lib/tool could be any of (you may put multiple):
 
@@ -19,27 +26,39 @@ Info is optional, It will tell you a short description of any lib from the list
 
 You may also do:
 ```console
-download [alllibs/alltools]
+downloader [alllibs/alltools]
 ```
-To get all libs/tools at once
+To get all libs/tools at once (alltools is specially useful!)
 
-You may want to only download the downloader file like so:
+If you want to do it all with a series of commands and skip downloading this repo's zip file:
 
 windows:
 ```console
-wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+wget -O download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c
+build.bat
+downloder info
 ```
 Or, if you want to use curl:
 ```console
 curl -o download.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.bat
+build.bat
+downloder info
 ```
 linux:
 ```console
 wget -O download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
+chmod +x build.sh
+cc downloader.c -o downloader -O2
+chmod +x downloader
+./downloder info
 ```
 Or, if you want to use curl:
 ```console
 curl -o download.sh https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/download.sh
+chmod +x build.sh
+cc downloader.c -o downloader -O2
+chmod +x downloader
+./downloder info
 ```
 
 ### license
