@@ -465,7 +465,7 @@ int main(int argc, char **argv)
     }
     if(toDownload[DOWNLOAD_view]) {
       printf("downloading String_View implementation...\n");
-      nob_cmd_append(&cmd, DOWNLOADER, "src/view.h", "https://raw.githubusercontent.com/tsoding/sv/refs/heads/master/sv.h");
+      nob_cmd_append(&cmd, DOWNLOADER, "src/sv.h", "https://raw.githubusercontent.com/tsoding/sv/refs/heads/master/sv.h");
       if(!nob_cmd_run_sync_and_reset(&cmd)) return 1;
       nob_sb_append_cstr(&mainBuilder, "#define SV_IMPLEMENTATION\n"
                          "#include \"sv.h\"\n\n");
