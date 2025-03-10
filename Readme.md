@@ -39,7 +39,7 @@ wget -O downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs
 wget -O nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 wget -O build.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/build.bat
 build.bat
-downloder info
+downloader info
 ```
 Or, if you want to use curl:
 ```console
@@ -47,7 +47,7 @@ curl -o downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs
 curl -o nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 curl -o build.bat https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/build.bat
 build.bat
-downloder info
+downloader info
 ```
 linux:
 ```console
@@ -55,7 +55,7 @@ wget -O downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs
 wget -O nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 cc downloader.c -o downloader -O2
 chmod +x downloader
-./downloder info
+./downloader info
 ```
 Or, if you want to use curl:
 ```console
@@ -63,7 +63,7 @@ curl -o downloader.c https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs
 curl -o nob.h https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/nob.h
 cc downloader.c -o downloader -O2
 chmod +x downloader
-./downloder info
+./downloader info
 ```
 
 ### license
