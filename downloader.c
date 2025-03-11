@@ -332,6 +332,9 @@ int main(int argc, char **argv)
           toDownload[DOWNLOAD_raddbg] = true;
           toDownload[DOWNLOAD_odin] = true;
         }
+        else if(memcmp(arg, "arena", strlen("arena")) == 0) {
+            toDownload[DOWNLOAD_arena] = true;
+        }
         else UnknownCommand(arg);
       } break;
 
