@@ -462,7 +462,7 @@ int main(int argc, char **argv)
         "\n"
         "int main(int argc, char **argv)\n"
         "{\n"
-        "  NOB_GO_REBUILD_URSELF(argc, argv)\n"
+        "  NOB_GO_REBUILD_URSELF(argc, argv);\n"
         "  return 0;\n"
         "}\n";
       if(!nob_write_entire_file("src/nob.c", nobCFileData, strlen(nobCFileData))) return 1;
