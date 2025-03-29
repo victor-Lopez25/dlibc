@@ -458,6 +458,7 @@ int main(int argc, char **argv)
       char *nobCFileData =
         "#define NOB_REBUILD_URSELF(binpath, srcpath) \"gcc\", \"-Wall\", \"-Wextra\", \"-o\", binpath, srcpath\n"
         "#define NOB_IMPLEMENTATION\n"
+        "#include \"nob.h\"\n"
         "\n"
         "int main(int argc, char **argv)\n"
         "{\n"
