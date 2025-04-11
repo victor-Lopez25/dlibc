@@ -281,6 +281,41 @@ odin_build_from_source:
   return true;
 }
 
+int UpdateSelf()
+{  
+  if(!nob_file_exists("downloader.c")) {
+    fprintf(stderr, "ERROR: This argument can only be given with '"__FILE__"' and 'nob.h' in the same directory\n");
+    return 1;
+  }
+
+  printf("Checking for updates...\n");
+  nob_cmd_append(&cmd, DOWNLOADER, __FILE__".tmp", "https://raw.githubusercontent.com/victor-Lopez25/dlibc/refs/heads/main/downloader.c");
+  if(!nob_cmd_run_sync_and_reset(&cmd)) {
+    fprintf(stderr, "aborting...\n");
+  }
+
+  Nob_String_Builder sb1 = {0};
+  Nob_String_Builder sb2 = {0};
+  if(!nob_read_entire_file(__FILE__, &sb1) || 
+     !nob_read_entire_file(__FILE__".tmp", &sb2)) {
+    fprintf(stderr, "aborting...\n");
+    nob_delete_file(__FILE__".tmp");
+    return 1;
+  }
+
+  size_t size = sb1.count > sb2.count ? sb2.count : sb1.count;
+  if(memcmp(sb1.items, sb2.items, size) == 0) {
+    printf("Already up to date.\n");
+    nob_delete_file(__FILE__".tmp");
+    return 0;
+  }
+
+  nob_delete_file(__FILE__);
+  nob_rename(__FILE__".tmp", __FILE__);
+
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   //NOB_GO_REBUILD_URSELF(argc, argv);
@@ -312,6 +347,10 @@ int main(int argc, char **argv)
   for(int i = 1; i < argc; i++)
   {
     char *arg = argv[i];
+    if(memcmp(arg, "update", strlen("update")) == 0) {
+      return UpdateSelf();
+    } 
+
     switch(arg[0]) {
       case '4': {
         if(memcmp(arg, "4coder", strlen("4coder")) == 0) {
