@@ -146,11 +146,13 @@ void ShowDetailedInfo()
          "  Rad game tools' raddebugger, a native, user-mode, multi-process, graphical debugger [raddbg].\n"
          "  Ginger Bill's Odin programming language [odin]. see more at odin-lang.org\n"
          "\n"
-         " Usage: download.bat {info} [lib/tool]\n"
+         " Usage: downloader {info} [lib/tool]\n"
          " where lib/tool could be any of (you may put multiple):\n"
          " libs: arena, view, nob\n"
          " tools: 4coder, raddbg, odinlang\n"
          " Info is optional, It will tell you a short description of any lib/tool from the list\n"
+         "\n"
+         "Update: downloader update\n"
          "\n"
          " Tool usage:\n"
          "  Raddebugger is the debugger I use any time I can, unfortunately it is windows only for now.\n"
@@ -326,9 +328,9 @@ int main(int argc, char **argv)
            "libs: arena, view, nob\n"
            "tools: 4coder, focus, raddbg, odin\n"
            "Info is optional, It will tell you a short description of any lib from the list\n"
-           "You may also do: download.bat [alllibs/alltools]\n"
-           "To get all libs/tools at once\n");
-    return 0;
+           "You may also do: 'downloader [alllibs/alltools]' To get all libs/tools at once\n"
+           "To update: downlaoder update\n");
+    return 1;
   }
 
   if(system(where("wget"))) {
