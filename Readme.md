@@ -66,5 +66,10 @@ chmod +x downloader
 ./downloader info
 ```
 
+If you already have the downloader built, you may update it (only downloader.c) like so:
+```console
+downloader update
+```
+
 ### license
 [dlibc](https://github.com/victor-Lopez25/dlibc) by [Víctor López](https://github.com/victor-Lopez25) is marked with [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0)
