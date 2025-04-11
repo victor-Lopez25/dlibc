@@ -202,9 +202,9 @@ bool DownloadOdinlang()
 odin_build_from_source:
     nob_cmd_append(&cmd, DOWNLOADER, "odinlang.zip", "https://github.com/odin-lang/Odin/archive/refs/heads/master.zip");
     if(!nob_cmd_run_sync_and_reset(&cmd)) return false;
-    UnzipToDir("odinlang.zip", "odinlang");
+    UnzipToDir("odinlang.zip", "OdinLang");
     nob_delete_file("odinlang.zip");
-    ChangeDirectory("odinlang");
+    ChangeDirectory("OdinLang");
     nob_minimal_log_level = NOB_WARNING;
     if(!nob_copy_directory_recursively("odin-master", ".")) return false;
     nob_minimal_log_level = NOB_INFO;
@@ -216,8 +216,8 @@ odin_build_from_source:
 #endif
   }
   else {
-    if(!nob_mkdir_if_not_exists("odinlang")) return false;
-    ChangeDirectory("odinlang");
+    if(!nob_mkdir_if_not_exists("OdinLang")) return false;
+    ChangeDirectory("OdinLang");
     char *fullFileName;
 #if linux
     if(!ARCH_X64) {
