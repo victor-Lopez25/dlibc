@@ -312,8 +312,9 @@ int UpdateSelf()
     return 0;
   }
 
-  nob_delete_file(__FILE__);
-  nob_rename(__FILE__".tmp", __FILE__);
+  if(nob_delete_file(__FILE__) || nob_rename(__FILE__".tmp", __FILE__)) {
+    printf("Successfully updated "__FILE__". Please run build.bat to build the new version.\n");
+  }
 
   return 0;
 }
